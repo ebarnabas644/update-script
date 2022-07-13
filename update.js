@@ -1,10 +1,11 @@
+require('dotenv').config()
 const axios = require('axios');
 const { type } = require('os');
 let data = []
 var languageList = ["english","german"]
 async function updateAppList() {
     const getDataFromSteamApi = await axios.get('http://api.steampowered.com/ISteamApps/GetAppList/v0002/?format=json');
-    const getAppListFromServer = await axios.get(`http://localhost:8080/api/appList/`);
+    const getAppListFromServer = await axios.get(`${process.env.APISERVERADDRESS}/api/appList/`);
 
     data = getDataFromSteamApi.data.applist.apps;
     console.log("----- Updating app list")
@@ -20,7 +21,7 @@ async function updateAppList() {
         if(i%10==0){
             console.log("--- Submiting: data: " + i + "/" + data.length)
         }
-        const submitDataToDatabaseApi = await axios.post('http://localhost:8080/api/appList/', postdata, {
+        const submitDataToDatabaseApi = await axios.post(`${process.env.APISERVERADDRESS}/api/appList/`, postdata, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -35,7 +36,7 @@ async function updateAppList() {
           })
           if(duplicate){
               //console.log("Update existing record")
-              const getAppFromServer = await axios.get(`http://localhost:8080/api/appList/${data[i].appid}`);
+              const getAppFromServer = await axios.get(`${process.env.APISERVERADDRESS}/api/appList/${data[i].appid}`);
               var updatepostdata = JSON.stringify({
                 "appid": data[i].appid,
                 "name": data[i].name,
@@ -43,7 +44,7 @@ async function updateAppList() {
                 "update_scheduled": getAppFromServer.data.update_scheduled,
                 "not_a_game": getAppFromServer.data.not_a_game
             });
-            const updateExistingData = await axios.put('http://localhost:8080/api/appList/' + data[i].appid, updatepostdata,{
+            const updateExistingData = await axios.put(`${process.env.APISERVERADDRESS}/api/appList/` + data[i].appid, updatepostdata,{
                         headers: {
                         'Content-Type': 'application/json'
                         }
@@ -58,8 +59,9 @@ async function updateAppList() {
 }
 
 async function updateDetailList(){
-    const getAppListFromServer = await axios.get(`http://localhost:8080/api/appList/`);
+    const getAppListFromServer = await axios.get(`${process.env.APISERVERADDRESS}/api/appList/`);
     numberOfData = getAppListFromServer.data.length
+    console.log(`${process.env.APISERVERADDRESS}/api/appList/`)
     console.log("----- Updating detail list")
     totalErrorsMitigated = 0
     for(var i = 0; i < numberOfData; i++){
@@ -195,7 +197,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                     "pc_requirements_recommended": data.pc_requirements == undefined ? null : data.pc_requirements.recommended == undefined ? null : data.pc_requirements.recommended
                 });
                 console.log("Submitting: data: "+data.steam_appid)
-                const submitDataToDatabaseApi = await axios.post(`http://localhost:8080/api/detailList/?l=${language}`, postdata, {
+                const submitDataToDatabaseApi = await axios.post(`${process.env.APISERVERADDRESS}/api/detailList/?l=${language}`, postdata, {
                     headers: {
                     'Content-Type': 'application/json'
                     }
@@ -207,7 +209,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                 })
                 if(duplicate){
                     console.log("Update existing record")
-                    const updateExistingData = await axios.put(`http://localhost:8080/api/detailList/` + data.steam_appid + `?l=${language}`, postdata,{
+                    const updateExistingData = await axios.put(`${process.env.APISERVERADDRESS}/api/detailList/` + data.steam_appid + `?l=${language}`, postdata,{
                                 headers: {
                                 'Content-Type': 'application/json'
                                 }
@@ -223,7 +225,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                     "update_scheduled": false,
                     "not_a_game": false
                 });
-                const updateDeadEntry = await axios.put('http://localhost:8080/api/appList/' + appid, postdata,{
+                const updateDeadEntry = await axios.put(`${process.env.APISERVERADDRESS}/api/appList/` + appid, postdata,{
                         headers: {
                         'Content-Type': 'application/json'
                         }
@@ -242,7 +244,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                     "update_scheduled": false,
                     "not_a_game": true
                 });
-                const updateDeadEntry = await axios.put('http://localhost:8080/api/appList/' + appid, postdata,{
+                const updateDeadEntry = await axios.put(`${process.env.APISERVERADDRESS}/api/appList/` + appid, postdata,{
                         headers: {
                         'Content-Type': 'application/json'
                         }
@@ -262,7 +264,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                 "update_scheduled": false,
                 "not_a_game": true
             });
-            const updateDeadEntry = await axios.put('http://localhost:8080/api/appList/' + appid, postdata,{
+            const updateDeadEntry = await axios.put(`${process.env.APISERVERADDRESS}/api/appList/` + appid, postdata,{
                     headers: {
                     'Content-Type': 'application/json'
                     }
