@@ -1,8 +1,10 @@
 require('dotenv').config()
 const axios = require('axios');
-const { type } = require('os');
 let data = []
 var languageList = ["english","german"]
+let gameLanguages = []
+let gameGenres = []
+let gameCategories = []
 async function updateAppList() {
     const getDataFromSteamApi = await axios.get('http://api.steampowered.com/ISteamApps/GetAppList/v0002/?format=json');
     const getAppListFromServer = await axios.get(`${process.env.APISERVERADDRESS}/api/appList/`);
@@ -113,6 +115,66 @@ function convertArrayToString(array){
     return converted
 }
 
+async function initCacheLists(){
+    gameLanguages = (await axios.get(`${process.env.APISERVERADDRESS}/api/languageList/`)).data;
+    gameGenres = (await axios.get(`${process.env.APISERVERADDRESS}/api/genreList/`)).data;
+    gameCategories = (await axios.get(`${process.env.APISERVERADDRESS}/api/categoryList/`)).data;
+}
+
+async function addValueToDatabase(language, objectValue, database){
+    var exists = false
+    if(database == "language"){
+        for(var i = 0; i < gameLanguages.length; i++){
+            if(gameLanguages[i].language == language && gameLanguages[i].languageValue == objectValue){
+                exists = true
+            }
+        }
+        objectToPush = {
+            "language": language,
+            "languageValue": objectValue
+        }
+      }
+      else if(database == "genre"){
+        for(var i = 0; i < gameGenres.length; i++){
+            if(gameGenres[i].language == language && gameGenres[i].genreValue == objectValue){
+                exists = true
+            }
+        }
+        objectToPush = {
+            "language": language,
+            "genreValue": objectValue
+        }
+      }
+      else if(database == "category"){
+        for(var i = 0; i < gameCategories.length; i++){
+            if(gameCategories[i].language == language && gameCategories[i].categoryValue == objectValue){
+                exists = true
+            }
+        }
+        objectToPush = {
+            "language": language,
+            "categoryValue": objectValue
+        }
+      }
+    if(!exists){
+        var postdata = JSON.stringify(objectToPush);
+        const submitDataToDatabaseApi = await axios.post(`${process.env.APISERVERADDRESS}/api/${database}List/`, postdata, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          if(database == "language"){
+            gameLanguages.push(objectToPush)
+          }
+          else if(database == "genre"){
+            gameGenres.push(objectToPush)
+          }
+          else if(database == "category"){
+            gameCategories.push(objectToPush)
+          }
+    }
+}
+
 function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
   }
@@ -121,7 +183,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
     console.log(`Checking ${language} version`)
     const getDataFromSteamApi = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${id}&l=${language}`);
     fetchData = getDataFromSteamApi.data[appid]
-    //TODO: Sometimes success is undefined!
+    //Sometimes fetch data is undefined!
     if(fetchData == undefined){
         console.log("Empty record, skipping...")
     }
@@ -132,12 +194,35 @@ async function tryCreateOrUpdateEntry(appid, name, language){
             duplicate = false
             if(apptype == "game"){
                 //console.log(data)
+                languageText = ""
+                if(data.supported_languages != undefined){
+                    languageText = data.supported_languages.replaceAll("<strong>*</strong>", "")
+                    languageText = languageText.replaceAll("<br>", "")
+                    var split = languageText.split(",")
+                    for (let i = 0; i < split.length - 1; i++) {
+                        if(split[i][0] == " "){
+                            split[i] = split[i].replace(" ", "")
+                        }
+                        languageText += split[i] + ","
+                        await addValueToDatabase(language, split[i], "language")
+                    }
+                    if(split[split.length - 1][0] == " "){
+                        split[split.length - 1] = split[split.length - 1].replace(" ", "")
+                    }
+                    languageText += split[split.length - 1]
+                    await addValueToDatabase(language, split[split.length - 1], "language")
+                }
+                else{
+                    languageText = null
+                }
                 categoriesText = ""
                 if(data.categories != undefined){
                     for(var y = 0; y < data.categories.length - 1; y++){
                         categoriesText += data.categories[y].description + ","
+                        await addValueToDatabase(language, data.categories[y].description, "category")
                     }
                     categoriesText += data.categories[data.categories.length - 1].description
+                    await addValueToDatabase(language, data.categories[data.categories.length - 1].description, "category")
                 }
                 else{
                     categoriesText = null
@@ -146,8 +231,10 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                 if(data.genres != undefined){
                     for(var y = 0; y < data.genres.length - 1; y++){
                         genresText += data.genres[y].description + ","
+                        await addValueToDatabase(language, data.genres[y].description, "genre")
                     }
                     genresText += data.genres[data.genres.length - 1].description
+                    await addValueToDatabase(language, data.genres[data.genres.length - 1].description, "genre")
                 }
                 else{
                     genresText = null
@@ -175,7 +262,7 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                     "detailed_description": data.detailed_description == undefined ? null : data.detailed_description,
                     "about_the_game": data.about_the_game == undefined ? null : data.about_the_game,
                     "short_description": data.short_description == undefined ? null : data.short_description,
-                    "supported_languages": data.supported_languages == undefined ? null : data.supported_languages,
+                    "supported_languages": languageText,
                     "reviews": data.reviews == undefined ? null : data.reviews,
                     "header_image": data.header_image == undefined ? null : data.header_image,
                     "website": data.website == undefined ? null : data.website,
@@ -277,4 +364,6 @@ async function tryCreateOrUpdateEntry(appid, name, language){
     }
 }
 
+initCacheLists()
 startUpdate()
+//getLanguageData()
