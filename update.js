@@ -125,38 +125,30 @@ async function addValueToDatabase(language, objectValue, database){
     var exists = false
     if(database == "language"){
         for(var i = 0; i < gameLanguages.length; i++){
-            if(gameLanguages[i].language == language && gameLanguages[i].languageValue == objectValue){
+            if(gameLanguages[i].language == language && gameLanguages[i].value == objectValue){
                 exists = true
             }
-        }
-        objectToPush = {
-            "language": language,
-            "languageValue": objectValue
         }
       }
       else if(database == "genre"){
         for(var i = 0; i < gameGenres.length; i++){
-            if(gameGenres[i].language == language && gameGenres[i].genreValue == objectValue){
+            if(gameGenres[i].language == language && gameGenres[i].value == objectValue){
                 exists = true
             }
-        }
-        objectToPush = {
-            "language": language,
-            "genreValue": objectValue
         }
       }
       else if(database == "category"){
         for(var i = 0; i < gameCategories.length; i++){
-            if(gameCategories[i].language == language && gameCategories[i].categoryValue == objectValue){
+            if(gameCategories[i].language == language && gameCategories[i].value == objectValue){
                 exists = true
             }
         }
-        objectToPush = {
-            "language": language,
-            "categoryValue": objectValue
-        }
       }
     if(!exists){
+        objectToPush = {
+            "language": language,
+            "value": objectValue
+        }
         var postdata = JSON.stringify(objectToPush);
         const submitDataToDatabaseApi = await axios.post(`${process.env.APISERVERADDRESS}/api/${database}List/`, postdata, {
             headers: {
@@ -198,19 +190,16 @@ async function tryCreateOrUpdateEntry(appid, name, language){
                 if(data.supported_languages != undefined){
                     languageText = data.supported_languages.replaceAll("<strong>*</strong>", "")
                     languageText = languageText.replaceAll("<br>", "")
+                    languageText = languageText.replaceAll("\r\n", ",")
+                    languageText = languageText.replace("languages with full audio support", "")
+                    languageText = languageText.replace("Sprachen mit voller Audiounterstützung", "")
                     var split = languageText.split(",")
-                    for (let i = 0; i < split.length - 1; i++) {
-                        if(split[i][0] == " "){
-                            split[i] = split[i].replace(" ", "")
+                    for (var y = 0; y < split.length; y++) {
+                        if(split[y][0] == " "){
+                            split[y] = split[y].replace(" ", "")
                         }
-                        languageText += split[i] + ","
-                        await addValueToDatabase(language, split[i], "language")
+                        await addValueToDatabase(language, split[y], "language")
                     }
-                    if(split[split.length - 1][0] == " "){
-                        split[split.length - 1] = split[split.length - 1].replace(" ", "")
-                    }
-                    languageText += split[split.length - 1]
-                    await addValueToDatabase(language, split[split.length - 1], "language")
                 }
                 else{
                     languageText = null
