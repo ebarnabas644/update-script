@@ -101,8 +101,25 @@ async function updateDetailList(){
     }
 }
 
+async function updateFeaturedGames(){
+    const cleareFeaturedGames = await axios.delete(`${process.env.APISERVERADDRESS}/api/featured/`);
+    const getFeaturedFromSteamApi = await axios.get('https://store.steampowered.com/api/featured/');
+    var featuredData = getFeaturedFromSteamApi.data.featured_win;
+    //console.log(featuredData)
+    for(var i = 0; i < featuredData.length; i++){
+        var postdata = JSON.stringify({
+            "id": featuredData[i].id
+        });
+        const pushFeaturedId = await axios.post(`${process.env.APISERVERADDRESS}/api/featured/`, postdata, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+    }
+}
+
 async function startUpdate(){
-    //await updateAppList()
+    await updateAppList()
     await updateDetailList()
 }
 
@@ -356,3 +373,4 @@ async function tryCreateOrUpdateEntry(appid, name, language){
 initCacheLists()
 startUpdate()
 //getLanguageData()
+updateFeaturedGames()
