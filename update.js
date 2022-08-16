@@ -1,4 +1,9 @@
 require('dotenv').config()
+
+//https://stackoverflow.com/questions/20082893/unable-to-verify-leaf-signature
+var sslRootCAs = require('ssl-root-cas/latest')
+sslRootCAs.inject()
+
 const axios = require('axios');
 let data = []
 var languageList = ["english","german"]
