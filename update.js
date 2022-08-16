@@ -372,5 +372,4 @@ async function tryCreateOrUpdateEntry(appid, name, language){
 
 initCacheLists()
 startUpdate()
-//getLanguageData()
 updateFeaturedGames()
