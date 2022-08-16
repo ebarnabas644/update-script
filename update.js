@@ -63,6 +63,7 @@ async function updateAppList() {
                         console.log(error)
                 })
         }
+        await delay(50)
     }
 
     console.log("Finished")
