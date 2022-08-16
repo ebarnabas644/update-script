@@ -1,10 +1,13 @@
 require('dotenv').config()
+https = require('https');
 
-//https://stackoverflow.com/questions/20082893/unable-to-verify-leaf-signature
-var sslRootCAs = require('ssl-root-cas/latest')
-sslRootCAs.inject()
+//they are on the same server
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+  })
 
 const axios = require('axios');
+axios.defaults.httpsAgent = httpsAgent
 let data = []
 var languageList = ["english","german"]
 let gameLanguages = []
@@ -12,7 +15,7 @@ let gameGenres = []
 let gameCategories = []
 async function updateAppList() {
     const getDataFromSteamApi = await axios.get('http://api.steampowered.com/ISteamApps/GetAppList/v0002/?format=json');
-    const getAppListFromServer = await axios.get(`${process.env.APISERVERADDRESS}/api/appList/`);
+    const getAppListFromServer = await axios.get(`${process.env.APISERVERADDRESS}/api/appList/`,);
 
     data = getDataFromSteamApi.data.applist.apps;
     console.log("----- Updating app list")
