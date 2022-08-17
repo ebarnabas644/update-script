@@ -20,6 +20,7 @@ async function updateAppList() {
     data = getDataFromSteamApi.data.applist.apps;
     console.log("----- Updating app list")
     for(var i = 0; i < data.length; i++) {
+        try{
         duplicate = false
         var postdata = JSON.stringify({
             "appid": data[i].appid,
@@ -63,6 +64,11 @@ async function updateAppList() {
                         console.log(error)
                 })
         }
+    }
+    catch{
+        console.log("Error at "+i+" index, trying again...")
+        i--;
+    }
         await delay(50)
     }
 
@@ -130,6 +136,7 @@ async function updateFeaturedGames(){
 async function startUpdate(){
     await updateAppList()
     await updateDetailList()
+    await updateFeaturedGames()
 }
 
 function convertArrayToString(array){
@@ -381,4 +388,3 @@ async function tryCreateOrUpdateEntry(appid, name, language){
 
 initCacheLists()
 startUpdate()
-updateFeaturedGames()
