@@ -69,7 +69,7 @@ async function updateAppList() {
         console.log("Error at "+i+" index, trying again...")
         i--;
     }
-        await delay(50)
+        await delay(200)
     }
 
     console.log("Finished")
